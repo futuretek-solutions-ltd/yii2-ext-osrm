@@ -1,0 +1,47 @@
+{
+    "name": "futuretek/yii2-osrm",
+    "description": "OSRM support",
+    "keywords": [
+        "extension",
+        "osrm",
+        "route",
+        "yii"
+    ],
+    "type": "yii2-extension",
+    "license": "proprietary",
+    "homepage": "http://www.futuretek.cz/",
+    "authors": [
+        {
+            "name": "Lukas Cerny",
+            "email": "lukas.cerny@futuretek.cz",
+            "homepage": "http://www.futuretek.cz",
+            "role": "Developer"
+        }
+    ],
+    "support": {
+        "issues": "https://jira.futuretek.cz/browse/YII",
+        "wiki": "https://doc.futuretek.cz/display/YII",
+        "source": "https://git.futuretek.cz/projects/YII"
+    },
+    "require": {
+        "php": ">=5.5.0",
+        "yiisoft/yii2": "*",
+        "futuretek/yii2-translations": "1.0.*"
+    },
+    "repositories": [
+        {
+            "url": "http://composer.futuretek.cz",
+            "type": "composer"
+        }
+    ],
+    "autoload": {
+        "psr-4": {
+            "futuretek\\osrm\\": ""
+        }
+    },
+    "extra": {
+        "branch-alias": {
+            "dev-master": "1.0.x-dev"
+        }
+    }
+}
