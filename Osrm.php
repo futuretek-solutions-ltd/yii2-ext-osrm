@@ -146,7 +146,7 @@ class Osrm
         return [
             'status' => 'ERROR',
             'code' => $this->_httpCode,
-            'message' => self::t('osrm', 'Error executing query. OSRM server returned HTTP code {code}', ['{code}' => $this->_httpCode]),
+            'message' => self::t('osrm', 'Error executing query. OSRM server returned HTTP code {code}', ['code' => $this->_httpCode]),
         ];
     }
 
@@ -208,7 +208,7 @@ class Osrm
                 return [
                     'status' => 'ERROR',
                     'code' => 666,
-                    'message' => self::t('osrm', 'Unknown OSRM status code {code}.', ['{code}' => $response['status']]),
+                    'message' => self::t('osrm', 'Unknown OSRM status code {code}.', ['code' => $response['status']]),
                 ];
             }
         } else {
@@ -245,7 +245,7 @@ class Osrm
                 return [
                     'status' => 'ERROR',
                     'code' => 666,
-                    'message' => self::t('osrm', 'Unknown OSRM status code {code}.', ['{code}' => $response['status']]),
+                    'message' => self::t('osrm', 'Unknown OSRM status code {code}.', ['code' => $response['status']]),
                 ];
             }
         } else {
