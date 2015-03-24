@@ -208,7 +208,11 @@ class Osrm
                 return [
                     'status' => 'ERROR',
                     'code' => 666,
-                    'message' => self::t('osrm', 'Unknown OSRM status code {code}.', ['code' => $response['status']]),
+                    'message' => self::t(
+                        'osrm',
+                        'Unknown OSRM status code {code}. Request was {req}',
+                        ['code' => $response['status'], 'req' => $query]
+                    ),
                 ];
             }
         } else {
@@ -245,7 +249,11 @@ class Osrm
                 return [
                     'status' => 'ERROR',
                     'code' => 666,
-                    'message' => self::t('osrm', 'Unknown OSRM status code {code}.', ['code' => $response['status']]),
+                    'message' => self::t(
+                        'osrm',
+                        'Unknown OSRM status code {code}. Request was {req}',
+                        ['code' => $response['status'], 'req' => $query]
+                    ),
                 ];
             }
         } else {
