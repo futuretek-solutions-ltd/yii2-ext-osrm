@@ -107,7 +107,11 @@ class Osrm
                 ];
             }
         } else {
-            return $this->_getHttpErrorResult();
+            return [
+                'status' => 'ERROR',
+                'code' => $this->_httpCode,
+                'message' => self::t('osrm', 'Error executing query. OSRM server returned HTTP code {code}', ['code' => $this->_httpCode]),
+            ];
         }
     }
 
@@ -133,21 +137,6 @@ class Osrm
         curl_close($c);
 
         return Json::decode($response);
-    }
-
-    /**
-     * Return result array for situations, when OSRM server returns some HTTP error code
-     *
-     * @return array Result array
-     * @private
-     */
-    private function _getHttpErrorResult()
-    {
-        return [
-            'status' => 'ERROR',
-            'code' => $this->_httpCode,
-            'message' => self::t('osrm', 'Error executing query. OSRM server returned HTTP code {code}', ['code' => $this->_httpCode]),
-        ];
     }
 
     /**
@@ -216,7 +205,15 @@ class Osrm
                 ];
             }
         } else {
-            return $this->_getHttpErrorResult();
+            return [
+                'status' => 'ERROR',
+                'code' => $this->_httpCode,
+                'message' => self::t(
+                    'osrm',
+                    'Error executing query. OSRM server returned HTTP code {code}. Request was {req}',
+                    ['code' => $this->_httpCode, 'req' => $query]
+                ),
+            ];
         }
     }
 
@@ -257,7 +254,15 @@ class Osrm
                 ];
             }
         } else {
-            return $this->_getHttpErrorResult();
+            return [
+                'status' => 'ERROR',
+                'code' => $this->_httpCode,
+                'message' => self::t(
+                    'osrm',
+                    'Error executing query. OSRM server returned HTTP code {code}. Request was {req}',
+                    ['code' => $this->_httpCode, 'req' => $query]
+                ),
+            ];
         }
     }
 

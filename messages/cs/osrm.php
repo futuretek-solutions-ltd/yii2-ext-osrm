@@ -17,7 +17,7 @@
  * NOTE: this file must be saved in UTF-8 encoding.
  */
 return array (
-  'Error executing query. OSRM server returned HTTP code {code}' => 'Došlo k chybě při provádění dotazu. Server OSRM vrátil kód {code}',
+  'Error executing query. OSRM server returned HTTP code {code}. Request was {req}' => 'Došlo k chybě při provádění dotazu. Server OSRM vrátil kód {code}. Požadavek byl {req}',
   'No coordinates specified.' => 'Nebyly zadány žádné souřadnice.',
   'No nearest point found.' => 'Nebyl nalezen žádný nejbližší bod.',
   'No route found.' => 'Nebyla nalezena žádná trasa.',
