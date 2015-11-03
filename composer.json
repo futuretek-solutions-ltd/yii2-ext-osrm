@@ -25,8 +25,7 @@
     },
     "require": {
         "php": ">=5.5.0",
-        "yiisoft/yii2": "*",
-        "futuretek/yii2-translations": "1.0.*"
+        "yiisoft/yii2": "2.*.*"
     },
     "repositories": [
         {
