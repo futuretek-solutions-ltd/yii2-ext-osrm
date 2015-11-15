@@ -109,14 +109,14 @@ class Osrm
                 return [
                     'status' => 'ERROR',
                     'code' => '666',
-                    'message' => Yii::t('futuretek/yii2-osrm/osrm', 'Unexpected server reply.'),
+                    'message' => Yii::t('fts-yii2-osrm', 'Unexpected server reply.'),
                 ];
             }
         } else {
             return [
                 'status' => 'ERROR',
                 'code' => $this->_httpCode,
-                'message' => Yii::t('futuretek/yii2-osrm/osrm', 'Error executing query. OSRM server returned HTTP code {code}', ['code' => $this->_httpCode]),
+                'message' => Yii::t('fts-yii2-osrm', 'Error executing query. OSRM server returned HTTP code {code}', ['code' => $this->_httpCode]),
             ];
         }
     }
@@ -177,7 +177,7 @@ class Osrm
             return [
                 'status' => 'ERROR',
                 'code' => 667,
-                'message' => Yii::t('futuretek/yii2-osrm/osrm', 'No coordinates specified.'),
+                'message' => Yii::t('fts-yii2-osrm', 'No coordinates specified.'),
             ];
         }
 
@@ -201,13 +201,13 @@ class Osrm
                 return [
                     'status' => 'ERROR',
                     'code' => $response['status'],
-                    'message' => Yii::t('futuretek/yii2-osrm/osrm', 'No route found.'),
+                    'message' => Yii::t('fts-yii2-osrm', 'No route found.'),
                 ];
             } else {
                 return [
                     'status' => 'ERROR',
                     'code' => 666,
-                    'message' => Yii::t('futuretek/yii2-osrm/osrm',
+                    'message' => Yii::t('fts-yii2-osrm',
                         'Unknown OSRM status code {code}. Request was {req}',
                         ['code' => $response['status'], 'req' => $query]
                     ),
@@ -217,7 +217,7 @@ class Osrm
             return [
                 'status' => 'ERROR',
                 'code' => $this->_httpCode,
-                'message' => Yii::t('futuretek/yii2-osrm/osrm',
+                'message' => Yii::t('fts-yii2-osrm',
                     'Error executing query. OSRM server returned HTTP code {code}. Request was {req}',
                     ['code' => $this->_httpCode, 'req' => $query]
                 ),
@@ -248,13 +248,13 @@ class Osrm
                 return [
                     'status' => 'ERROR',
                     'code' => $response['status'],
-                    'message' => Yii::t('futuretek/yii2-osrm/osrm', 'No nearest point found.'),
+                    'message' => Yii::t('fts-yii2-osrm', 'No nearest point found.'),
                 ];
             } else {
                 return [
                     'status' => 'ERROR',
                     'code' => 666,
-                    'message' => Yii::t('futuretek/yii2-osrm/osrm',
+                    'message' => Yii::t('fts-yii2-osrm',
                         'Unknown OSRM status code {code}. Request was {req}',
                         ['code' => $response['status'], 'req' => $query]
                     ),
@@ -264,7 +264,7 @@ class Osrm
             return [
                 'status' => 'ERROR',
                 'code' => $this->_httpCode,
-                'message' => Yii::t('futuretek/yii2-osrm/osrm',
+                'message' => Yii::t('fts-yii2-osrm',
                     'Error executing query. OSRM server returned HTTP code {code}. Request was {req}',
                     ['code' => $this->_httpCode, 'req' => $query]
                 ),
