@@ -3,7 +3,11 @@
 namespace futuretek\osrm;
 
 use Yii;
+use yii\base\InvalidConfigException;
+use yii\base\Object;
+use yii\base\UserException;
 use yii\helpers\Json;
+use yii\web\HttpException;
 
 /**
  * Class Osrm
@@ -13,216 +17,85 @@ use yii\helpers\Json;
  * @license http://www.futuretek.cz/license FTSLv1
  * @link    http://www.futuretek.cz
  */
-class Osrm
+class Osrm extends Object
 {
-    /**
-     * @var string OSRM API URL
-     */
-    private $_apiUrl;
+    /** @var string OSRM API URL */
+    private $url;
+
+    /** @var string OSRM API username */
+    private $username;
+
+    /** @var string OSRM API password */
+    private $password;
+
+    /** @var resource cURL handler */
+    private $_curl;
 
     /**
-     * @var string OSRM API username
+     * @inheritdoc
+     * @throws \yii\base\InvalidConfigException
      */
-    private $_username;
-
-    /**
-     * @var string OSRM API password
-     */
-    private $_password;
-
-    /**
-     * @var string CURL HTTP status code
-     */
-    private $_httpCode;
-
-    /**
-     * @var bool Use authorization
-     */
-    private $_useAuth = false;
-
-    /**
-     * @return string
-     */
-    public function getPassword()
+    public function init()
     {
-        return $this->_password;
+        parent::init();
+
+        if ($this->url === null) {
+            throw new InvalidConfigException(Yii::t('fts-yii2-osrm', 'OSRM API URL not set.'));
+        }
+        $this->url = rtrim($this->url, '/') . '/';
+
+        //Init cURL
+        $this->_curl = curl_init();
+        curl_setopt($this->_curl, CURLOPT_RETURNTRANSFER, 1);
+        if ($this->username !== null && $this->password !== null) {
+            curl_setopt($this->_curl, CURLOPT_HTTPAUTH, CURLAUTH_BASIC);
+            curl_setopt($this->_curl, CURLOPT_USERPWD, "{$this->username}:{$this->password}");
+        }
     }
 
-    /**
-     * @return boolean
-     */
-    public function getUseAuth()
-    {
-        return $this->_useAuth;
-    }
-
-    /**
-     * @return string
-     */
-    public function getUsername()
-    {
-        return $this->_username;
-    }
-
-    /**
-     * Set authorization information
-     *
-     * Call it with no parameters to disable authorization
-     *
-     * @param null|string $username Username
-     * @param null|string $password Password
-     *
-     * @return void
-     */
-    public function setAuthInfo($username = null, $password = null)
-    {
-        $this->_username = $username;
-        $this->_password = $password;
-        $this->_useAuth = ($this->_username !== null && $this->_password !== null);
-    }
 
     /**
      * Test if the connection to the OSRM API is working
      *
-     * @return int Connection status code (1 = OK, 0 = Reply mismatch, other = HTTP error code)
+     * @return bool
+     * @throws \yii\web\HttpException
+     * @throws \yii\base\InvalidParamException
      */
     public function ping()
     {
-        $query = $this->_apiUrl . 'hello';
-        try {
-            $response = Json::decode($this->_runQuery($query));
-        } catch (\Throwable $e){
-            return [
-                'status' => 'ERROR',
-                'code' => $e->getCode(),
-                'message' => $e->getMessage(),
-            ];
-        }
+        $response = $this->_runQuery('hello');
 
-        if ((int)$this->_httpCode === 200) {
-            if ($response['title'] === 'Hello World') {
-                return [
-                    'status' => 'OK',
-                    'response' => $response,
-                ];
-            } else {
-                return [
-                    'status' => 'ERROR',
-                    'code' => '666',
-                    'message' => Yii::t('fts-yii2-osrm', 'Unexpected server reply.'),
-                ];
-            }
-        } else {
-            return [
-                'status' => 'ERROR',
-                'code' => $this->_httpCode,
-                'message' => Yii::t('fts-yii2-osrm', 'Error executing query. OSRM server returned HTTP code {code}', ['code' => $this->_httpCode]),
-            ];
-        }
+        return array_key_exists('check_sum', $response);
     }
 
     /**
-     * Run query
+     * Get route between points
      *
-     * @param string $query URL query string
-     *
-     * @return string HTTP status code (200 for OK)
+     * @param array $coordinates List of points. Each point must provide "lat" and "lon" element in form of associative array.
+     * @param int $zoom Zoom (decrease if some routes cannot be found)
+     * @return RouteResult
+     * @throws \yii\base\InvalidConfigException
+     * @throws \yii\base\InvalidParamException
+     * @throws HttpException
+     * @throws UserException
      */
-    private function _runQuery($query)
+    public function getRoute(array $coordinates, $zoom = 13)
     {
-        $c = curl_init($this->_apiUrl . $query);
-        curl_setopt($c, CURLOPT_RETURNTRANSFER, 1);
-
-        if ($this->_useAuth) {
-            curl_setopt($c, CURLOPT_HTTPAUTH, CURLAUTH_BASIC);
-            curl_setopt($c, CURLOPT_USERPWD, "{$this->_username}:{$this->_password}");
-        }
-
-        $response = curl_exec($c);
-        $this->_httpCode = curl_getinfo($c, CURLINFO_HTTP_CODE);
-        curl_close($c);
-
-        try {
-            return Json::decode($response);
-        } catch (\Throwable $e) {
-            return ['status' => $e->getMessage()];
-        }
-    }
-
-    /**
-     * Get API URL
-     *
-     * @return string API URL
-     */
-    public function getApiUrl()
-    {
-        return $this->_apiUrl;
-    }
-
-    /**
-     * Set API URL
-     *
-     * @param string $url URL
-     *
-     * @return void
-     */
-    public function setApiUrl($url)
-    {
-        $this->_apiUrl = rtrim($url, '/') . '/';
-    }
-
-    public function getRoute($coords)
-    {
-        if (!is_array($coords) && count($coords) > 1) {
-            return [
-                'status' => 'ERROR',
-                'code' => 667,
-                'message' => Yii::t('fts-yii2-osrm', 'No coordinates specified.'),
-            ];
+        if (count($coordinates) < 2) {
+            throw new UserException(Yii::t('fts-yii2-osrm', 'Minimal two points should be provided.'));
         }
 
         $query = 'viaroute?';
-        foreach ($coords as $item) {
+        foreach ($coordinates as $item) {
             $query .= 'loc=' . $item['lat'] . ',' . $item['lon'] . '&';
         }
 
-        //Zoom (decrease if some routes cannot be found)
-        $query .= 'z=13';
-
-        $response = $this->_runQuery($query);
-
-        if ($this->_httpCode === 200) {
-            if ($response['status'] === 0) {
-                return [
-                    'status' => 'OK',
-                    'response' => $response,
-                ];
-            } elseif ($response['status'] === 207) {
-                return [
-                    'status' => 'ERROR',
-                    'code' => $response['status'],
-                    'message' => Yii::t('fts-yii2-osrm', 'No route found.'),
-                ];
-            } else {
-                return [
-                    'status' => 'ERROR',
-                    'code' => 666,
-                    'message' => Yii::t('fts-yii2-osrm',
-                        'Unknown OSRM status code {code}. Request was {req}',
-                        ['code' => $response['status'], 'req' => $query]
-                    ),
-                ];
-            }
-        } else {
-            return [
-                'status' => 'ERROR',
-                'code' => $this->_httpCode,
-                'message' => Yii::t('fts-yii2-osrm',
-                    'Error executing query. OSRM server returned HTTP code {code}. Request was {req}',
-                    ['code' => $this->_httpCode, 'req' => $query]
-                ),
-            ];
+        $response = $this->_runQuery($query . $zoom);
+        if ((int)$response['status'] !== 0) {
+            throw new UserException(Yii::t('fts-yii2-osrm', 'Error while executing route query: {msg}.', ['msg' => $response['status_message']]));
         }
+
+        return Yii::createObject('RouteResult', $response['route_summary']);
     }
 
     /**
@@ -230,46 +103,63 @@ class Osrm
      *
      * @param string $gpsLat GPS Latitude
      * @param string $gpsLon GPS Longitude
-     *
-     * @return array
+     * @return NearestResult
+     * @throws \yii\base\InvalidConfigException
+     * @throws \yii\base\UserException
+     * @throws \yii\web\HttpException
+     * @throws \yii\base\InvalidParamException
      */
     public function getNearest($gpsLat, $gpsLon)
     {
-        $query = 'nearest?loc=' . $gpsLat . ',' . $gpsLon;
-        $response = $this->_runQuery($query);
-
-        if ($this->_httpCode === 200) {
-            if ($response['status'] === 0) {
-                return [
-                    'status' => 'OK',
-                    'response' => $response['name'],
-                ];
-            } elseif ($response['status'] === 207) {
-                return [
-                    'status' => 'ERROR',
-                    'code' => $response['status'],
-                    'message' => Yii::t('fts-yii2-osrm', 'No nearest point found.'),
-                ];
-            } else {
-                return [
-                    'status' => 'ERROR',
-                    'code' => 666,
-                    'message' => Yii::t('fts-yii2-osrm',
-                        'Unknown OSRM status code {code}. Request was {req}',
-                        ['code' => $response['status'], 'req' => $query]
-                    ),
-                ];
-            }
-        } else {
-            return [
-                'status' => 'ERROR',
-                'code' => $this->_httpCode,
-                'message' => Yii::t('fts-yii2-osrm',
-                    'Error executing query. OSRM server returned HTTP code {code}. Request was {req}',
-                    ['code' => $this->_httpCode, 'req' => $query]
-                ),
-            ];
+        $response = $this->_runQuery('nearest?loc=' . $gpsLat . ',' . $gpsLon);
+        if ((int)$response['status'] !== 0) {
+            throw new UserException(Yii::t('fts-yii2-osrm', 'Error while executing route query: {msg}', ['msg' => $response['status_message']]));
         }
+
+        return Yii::createObject('NearestResult', $response);
     }
 
+    /**
+     * Run query
+     *
+     * @param string $query URL query string
+     * @return array Response
+     * @throws \yii\base\InvalidParamException
+     * @throws \yii\web\HttpException
+     */
+    private function _runQuery($query)
+    {
+        $query = $this->url . $query;
+        Yii::trace('Running query: ' . $query, 'osrm');
+        curl_setopt($this->_curl, CURLOPT_URL, $query);
+        $response = curl_exec($this->_curl);
+        $httpCode = curl_getinfo($this->_curl, CURLINFO_HTTP_CODE);
+        Yii::trace('Query result code: ' . $httpCode, 'osrm');
+        if ($httpCode !== 200 || !$response) {
+            Yii::trace('Response from OSRM: ' . $response, 'osrm');
+            throw new HttpException($httpCode, Yii::t('fts-yii2-osrm', 'Error while executing route query.'));
+        }
+
+        return Json::decode($response);
+    }
+}
+
+class NearestResult
+{
+    /** @var string Node name */
+    public $name;
+    /** @var array Mapped coordinates - [Latitude, Longitude] */
+    public $mapped_coordinate;
+}
+
+class RouteResult
+{
+    /** @var string Route start point */
+    public $start_point;
+    /** @var string Route end point */
+    public $end_point;
+    /** @var int Total route time in seconds */
+    public $total_time;
+    /** @var int Total route distance in meters */
+    public $total_distance;
 }
