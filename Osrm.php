@@ -20,13 +20,13 @@ use yii\web\HttpException;
 class Osrm extends Object
 {
     /** @var string OSRM API URL */
-    private $url;
+    public $url;
 
     /** @var string OSRM API username */
-    private $username;
+    public $username;
 
     /** @var string OSRM API password */
-    private $password;
+    public $password;
 
     /** @var resource cURL handler */
     private $_curl;
