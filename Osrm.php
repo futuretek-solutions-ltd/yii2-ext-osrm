@@ -116,7 +116,7 @@ class Osrm extends Object
             throw new UserException(Yii::t('fts-yii2-osrm', 'Error while executing route query: {msg}', ['msg' => $response['status_message']]));
         }
 
-        return Yii::createObject('NearestResult', $response);
+        return Yii::createObject('\futuretek\osrm\NearestResult', $response);
     }
 
     /**
@@ -144,7 +144,7 @@ class Osrm extends Object
     }
 }
 
-class NearestResult
+class NearestResult extends Object
 {
     /** @var string Node name */
     public $name;
@@ -152,7 +152,7 @@ class NearestResult
     public $mapped_coordinate;
 }
 
-class RouteResult
+class RouteResult extends Object
 {
     /** @var string Route start point */
     public $start_point;
