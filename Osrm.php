@@ -2,10 +2,10 @@
 
 namespace futuretek\osrm;
 
+use futuretek\yii\shared\FtsException;
 use Yii;
 use yii\base\InvalidConfigException;
 use yii\base\Object;
-use yii\base\UserException;
 use yii\helpers\Json;
 use yii\web\HttpException;
 
@@ -74,15 +74,15 @@ class Osrm extends Object
      * @param array $coordinates List of points. Each point must provide "lat" and "lon" element in form of associative array.
      * @param int $zoom Zoom (decrease if some routes cannot be found)
      * @return RouteResult
+     * @throws \futuretek\yii\shared\FtsException
      * @throws \yii\base\InvalidConfigException
      * @throws \yii\base\InvalidParamException
      * @throws HttpException
-     * @throws UserException
      */
     public function getRoute(array $coordinates, $zoom = 13)
     {
         if (count($coordinates) < 2) {
-            throw new UserException(Yii::t('fts-yii2-osrm', 'Minimal two points should be provided.'));
+            throw new FtsException(Yii::t('fts-yii2-osrm', 'Minimal two points should be provided.'));
         }
 
         $query = 'viaroute?';
@@ -92,7 +92,7 @@ class Osrm extends Object
 
         $response = $this->_runQuery($query . $zoom);
         if ((int)$response['status'] !== 0) {
-            throw new UserException(Yii::t('fts-yii2-osrm', 'Error while executing route query: {msg}.', ['msg' => $response['status_message']]));
+            throw new FtsException(Yii::t('fts-yii2-osrm', 'Error while executing route query: {msg}.', ['msg' => $response['status_message']]));
         }
 
         return Yii::createObject('RouteResult', $response['route_summary']);
@@ -104,8 +104,8 @@ class Osrm extends Object
      * @param string $gpsLat GPS Latitude
      * @param string $gpsLon GPS Longitude
      * @return NearestResult
+     * @throws \futuretek\yii\shared\FtsException
      * @throws \yii\base\InvalidConfigException
-     * @throws \yii\base\UserException
      * @throws \yii\web\HttpException
      * @throws \yii\base\InvalidParamException
      */
@@ -113,7 +113,7 @@ class Osrm extends Object
     {
         $response = $this->_runQuery('nearest?loc=' . $gpsLat . ',' . $gpsLon);
         if ((int)$response['status'] !== 0) {
-            throw new UserException(Yii::t('fts-yii2-osrm', 'Error while executing route query: {msg}', ['msg' => $response['status_message']]));
+            throw new FtsException(Yii::t('fts-yii2-osrm', 'Error while executing route query: {msg}', ['msg' => $response['status_message']]));
         }
 
         return Yii::createObject('NearestResult', $response);
