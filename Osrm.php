@@ -90,12 +90,12 @@ class Osrm extends Object
             $query .= 'loc=' . $item['lat'] . ',' . $item['lon'] . '&';
         }
 
-        $response = $this->_runQuery($query . $zoom);
+        $response = $this->_runQuery($query . 'z=' . $zoom);
         if ((int)$response['status'] !== 0) {
             throw new FtsException(Yii::t('fts-yii2-osrm', 'Error while executing route query: {msg}.', ['msg' => $response['status_message']]));
         }
 
-        return Yii::createObject('RouteResult', $response['route_summary']);
+        return Yii::createObject(array_merge(['class' => '\futuretek\osrm\RouteResult'], $response['route_summary']));
     }
 
     /**
@@ -115,8 +115,9 @@ class Osrm extends Object
         if ((int)$response['status'] !== 0) {
             throw new FtsException(Yii::t('fts-yii2-osrm', 'Error while executing route query: {msg}', ['msg' => $response['status_message']]));
         }
+        unset($response['status']);
 
-        return Yii::createObject('\futuretek\osrm\NearestResult', $response);
+        return Yii::createObject(array_merge(['class' => '\futuretek\osrm\NearestResult'], $response));
     }
 
     /**
