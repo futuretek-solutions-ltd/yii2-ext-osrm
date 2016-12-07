@@ -92,7 +92,7 @@ class Osrm extends Object
 
         $response = $this->_runQuery($query . 'z=' . $zoom);
         if ((int)$response['status'] !== 0) {
-            throw new FtsException(Yii::t('fts-yii2-osrm', 'Error while executing route query: {msg}.', ['msg' => $response['status_message']]));
+            throw new FtsException(Yii::t('fts-yii2-osrm', 'Error while executing route query: {msg}.', ['msg' => $response['status_message']]), (int)$response['status']);
         }
 
         return Yii::createObject(array_merge(['class' => '\futuretek\osrm\RouteResult'], $response['route_summary']));
@@ -113,7 +113,7 @@ class Osrm extends Object
     {
         $response = $this->_runQuery('nearest?loc=' . $gpsLat . ',' . $gpsLon);
         if ((int)$response['status'] !== 0) {
-            throw new FtsException(Yii::t('fts-yii2-osrm', 'Error while executing route query: {msg}', ['msg' => $response['status_message']]));
+            throw new FtsException(Yii::t('fts-yii2-osrm', 'Error while executing route query: {msg}', ['msg' => $response['status_message']]), (int)$response['status']);
         }
         unset($response['status']);
 
