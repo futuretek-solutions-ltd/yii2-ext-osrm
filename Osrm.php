@@ -4,8 +4,8 @@ namespace futuretek\osrm;
 
 use futuretek\yii\shared\FtsException;
 use Yii;
+use yii\base\BaseObject;
 use yii\base\InvalidConfigException;
-use yii\base\Object;
 use yii\helpers\Json;
 use yii\web\HttpException;
 
@@ -14,10 +14,10 @@ use yii\web\HttpException;
  *
  * @package osrm
  * @author  Lukas Cerny <lukas.cerny@futuretek.cz>
- * @license http://www.futuretek.cz/license FTSLv1
+ * @license proprietary
  * @link    http://www.futuretek.cz
  */
-class Osrm extends Object
+class Osrm extends BaseObject
 {
     /** @var string OSRM API URL */
     public $url;
@@ -143,24 +143,4 @@ class Osrm extends Object
 
         return Json::decode($response);
     }
-}
-
-class NearestResult extends Object
-{
-    /** @var string Node name */
-    public $name;
-    /** @var array Mapped coordinates - [Latitude, Longitude] */
-    public $mapped_coordinate;
-}
-
-class RouteResult extends Object
-{
-    /** @var string Route start point */
-    public $start_point;
-    /** @var string Route end point */
-    public $end_point;
-    /** @var int Total route time in seconds */
-    public $total_time;
-    /** @var int Total route distance in meters */
-    public $total_distance;
 }
