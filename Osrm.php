@@ -19,6 +19,10 @@ use yii\web\HttpException;
  */
 class Osrm extends BaseObject
 {
+    const VERSION = 'v1';
+    const PROFILE = 'car';
+    const FORMAT = 'json';
+
     /** @var string OSRM API URL */
     public $url;
 
@@ -58,14 +62,11 @@ class Osrm extends BaseObject
      * Test if the connection to the OSRM API is working
      *
      * @return bool
-     * @throws \yii\web\HttpException
-     * @throws \yii\base\InvalidParamException
+     * @deprecated Not implemented in API anymore
      */
     public function ping()
     {
-        $response = $this->_runQuery('hello');
-
-        return array_key_exists('check_sum', $response);
+        return true;
     }
 
     /**
@@ -85,17 +86,22 @@ class Osrm extends BaseObject
             throw new FtsException(Yii::t('fts-yii2-osrm', 'Minimal two points should be provided.'));
         }
 
-        $query = 'viaroute?';
-        foreach ($coordinates as $item) {
-            $query .= 'loc=' . $item['lat'] . ',' . $item['lon'] . '&';
+        $response = $this->_runQuery('route', $coordinates, ['zoom' => $zoom]);
+
+        if (!array_key_exists('routes', $response) || !is_array($response['routes'])) {
+            throw new HttpException(Yii::t('fts-yii2-osrm', 'Invalid response.'));
         }
 
-        $response = $this->_runQuery($query . 'z=' . $zoom);
-        if ((int)$response['status'] !== 0) {
-            throw new FtsException(Yii::t('fts-yii2-osrm', 'Error while executing route query: {msg}.', ['msg' => $response['status_message']]), (int)$response['status']);
-        }
+        $route = reset($response['routes']);
+        $firstPoint = reset($coordinates);
+        $lastPoint = end($coordinates);
 
-        return Yii::createObject(array_merge(['class' => '\futuretek\osrm\RouteResult'], $response['route_summary']));
+        $route['start_point'] = [$firstPoint['lat'], $firstPoint['lon']];
+        $route['end_point'] = [$lastPoint['lat'], $lastPoint['lon']];
+        $route['total_time'] = $route['duration'];
+        $route['total_distance'] = $route['distance'];
+
+        return Yii::createObject(array_merge(['class' => '\futuretek\osrm\RouteResult'], $route));
     }
 
     /**
@@ -105,32 +111,104 @@ class Osrm extends BaseObject
      * @param string $gpsLon GPS Longitude
      * @return NearestResult
      * @throws \futuretek\yii\shared\FtsException
-     * @throws \yii\base\InvalidConfigException
      * @throws \yii\web\HttpException
      * @throws \yii\base\InvalidParamException
      */
     public function getNearest($gpsLat, $gpsLon)
     {
-        $response = $this->_runQuery('nearest?loc=' . $gpsLat . ',' . $gpsLon);
-        if ((int)$response['status'] !== 0) {
-            throw new FtsException(Yii::t('fts-yii2-osrm', 'Error while executing route query: {msg}', ['msg' => $response['status_message']]), (int)$response['status']);
-        }
-        unset($response['status']);
+        $response = $this->_runQuery('nearest', [['lat' => $gpsLat, 'lon' => $gpsLon]]);
 
-        return Yii::createObject(array_merge(['class' => '\futuretek\osrm\NearestResult'], $response));
+        if (!array_key_exists('waypoints', $response) || !is_array($response['waypoints'])) {
+            throw new HttpException(Yii::t('fts-yii2-osrm', 'Invalid response.'));
+        }
+
+        $wp = reset($response['waypoints']);
+        $wp['mapped_coordinate'] = [$wp['location'][1], $wp['location'][0]];
+
+        return Yii::createObject(array_merge(['class' => '\futuretek\osrm\NearestResult'], $wp));
+    }
+
+    /**
+     * Build URL part from coordinates array
+     *
+     * @param array $coordinates List of points. Each point must provide "lat" and "lon" element in form of associative array.
+     * @return string
+     * @throws FtsException
+     */
+    protected function buildLogLat(array $coordinates)
+    {
+        $output = [];
+        foreach ($coordinates as $coord) {
+            if (!array_key_exists('lon', $coord) || !array_key_exists('lat', $coord)) {
+                throw new FtsException(Yii::t('fts-yii2-osrm', 'Invalid coordinates format.'));
+            }
+            $output[] = $coord['lon'] . ',' . $coord['lat'];
+        }
+
+        return implode(';', $output);
+    }
+
+    /**
+     * Get error message specified by error code
+     *
+     * @param string $code Error code
+     * @return string
+     */
+    protected function getErrorMessage($code)
+    {
+        switch ($code) {
+            case 'Ok':
+                return 'Request could be processed as expected.';
+                break;
+            case 'InvalidUrl':
+                return 'URL string is invalid.';
+                break;
+            case 'InvalidService':
+                return 'Service name is invalid.';
+                break;
+            case 'InvalidVersion':
+                return 'Version is not found.';
+                break;
+            case 'InvalidOptions':
+                return 'Options are invalid.';
+                break;
+            case 'InvalidQuery':
+                return 'The query string is synctactically malformed.';
+                break;
+            case 'InvalidValue':
+                return 'The successfully parsed query parameters are invalid.';
+                break;
+            case 'NoSegment':
+                return 'One of the supplied input coordinates could not snap to street segment.';
+                break;
+            case 'TooBig':
+                return 'The request size violates one of the service specific request size restrictions.';
+                break;
+            default:
+                return 'Unknown error.';
+        }
     }
 
     /**
      * Run query
      *
-     * @param string $query URL query string
+     * @param string $action API action
+     * @param array $coordinates List of points. Each point must provide "lat" and "lon" element in form of associative array.
+     * @param array Additional parameters (after question mark) in format name => value.
      * @return array Response
      * @throws \yii\base\InvalidParamException
      * @throws \yii\web\HttpException
+     * @throws FtsException
      */
-    private function _runQuery($query)
+    private function _runQuery($action, array $coordinates, array $params = [])
     {
-        $query = $this->url . $query;
+        $paramsArr = [];
+        foreach ($params as $k => $v) {
+            $paramsArr = $k . '=' . $v;
+        }
+        $paramsStr = implode('&', $paramsArr);
+
+        $query = $this->url . $action . '/' . self::VERSION . '/' . self::PROFILE . '/' . $this->buildLogLat($coordinates) . '.' . self::FORMAT . ($paramsStr ? '?' . $paramsStr : '');
         Yii::trace('Running query: ' . $query, 'osrm');
         curl_setopt($this->_curl, CURLOPT_URL, $query);
         $response = curl_exec($this->_curl);
@@ -138,7 +216,12 @@ class Osrm extends BaseObject
         Yii::trace('Query result code: ' . $httpCode, 'osrm');
         if ($httpCode !== 200 || !$response) {
             Yii::trace('Response from OSRM: ' . $response, 'osrm');
-            throw new HttpException($httpCode, Yii::t('fts-yii2-osrm', 'Error while executing route query.'));
+            if (!$response) {
+                throw new HttpException($httpCode, Yii::t('fts-yii2-osrm', 'Error while executing route query.'));
+            }
+
+            $response = Json::decode($response);
+            throw new HttpException($httpCode, Yii::t('fts-yii2-osrm', 'Error while executing route query: {msg}.', ['msg' => $this->getErrorMessage($response['code'])]));
         }
 
         return Json::decode($response);
