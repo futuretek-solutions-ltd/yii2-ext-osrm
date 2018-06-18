@@ -23,6 +23,9 @@ class RouteResult extends BaseObject
     /** @var array The whole geometry of the route value depending on overview parameter, format depending on the geometries parameter. See RouteStep's geometry property for a parameter documentation. */
     public $geometry;
 
+    /** @var array Route legs */
+    public $legs;
+
     /** @var float The calculated weight of the route. */
     public $weight;
 

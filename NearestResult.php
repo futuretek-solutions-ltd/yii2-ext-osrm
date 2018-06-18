@@ -30,6 +30,9 @@ class NearestResult extends BaseObject
     /** @var array Array that contains the [longitude, latitude] pair of the snapped coordinate */
     public $location;
 
+    /** @var array Array of OpenStreetMap node ids. */
+    public $nodes;
+
     /**
      * @var array Mapped coordinates - [Latitude, Longitude]
      * @deprecated

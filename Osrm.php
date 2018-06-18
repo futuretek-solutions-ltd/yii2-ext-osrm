@@ -86,7 +86,7 @@ class Osrm extends BaseObject
             throw new FtsException(Yii::t('fts-yii2-osrm', 'Minimal two points should be provided.'));
         }
 
-        $response = $this->_runQuery('route', $coordinates, ['zoom' => $zoom]);
+        $response = $this->_runQuery('route', $coordinates);
 
         if (!array_key_exists('routes', $response) || !is_array($response['routes'])) {
             throw new HttpException(Yii::t('fts-yii2-osrm', 'Invalid response.'));
@@ -204,11 +204,11 @@ class Osrm extends BaseObject
     {
         $paramsArr = [];
         foreach ($params as $k => $v) {
-            $paramsArr = $k . '=' . $v;
+            $paramsArr[] = $k . '=' . $v;
         }
         $paramsStr = implode('&', $paramsArr);
 
-        $query = $this->url . $action . '/' . self::VERSION . '/' . self::PROFILE . '/' . $this->buildLogLat($coordinates) . '.' . self::FORMAT . ($paramsStr ? '?' . $paramsStr : '');
+        $query = $this->url . $action . '/' . self::VERSION . '/' . self::PROFILE . '/' . $this->buildLogLat($coordinates) . ($paramsStr ? '?' . $paramsStr : '');
         Yii::trace('Running query: ' . $query, 'osrm');
         curl_setopt($this->_curl, CURLOPT_URL, $query);
         $response = curl_exec($this->_curl);
