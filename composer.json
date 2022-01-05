@@ -18,9 +18,9 @@
         }
     ],
     "require": {
-        "php": ">=5.5.0",
+        "php": ">=7.4.0",
         "yiisoft/yii2": "^2.0.0",
-        "futuretek/yii2-yii-shared": "^1.0.0"
+        "futuretek/yii2-yii-shared": "^3.0.0"
     },
     "autoload": {
         "psr-4": {
